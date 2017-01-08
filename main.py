@@ -18,7 +18,7 @@ import sys
 # will default to rle.string if left blank.
 #####SETTINGS#####
 wait = 50 # wait time between generation in milliseconds. must be > 0
-pixel_size = 5 # effects size of output screen. Adjust to taste.
+pixel_size = 5 # effects size of output screen. must be > 0
 frame = 20 # Frame of dead cells around rle_pattern. should be > 5
 wrapping = False # Set True for Matrix to wrap around itself
 generations = 200 # Number of generations before program dies.
@@ -70,8 +70,8 @@ class Life:
 
 
 class Rules:
-    """Parses rule_string into and calculates the next
-    generation of matrix from the current matrix and the neighbor matrix.
+    """Parses rule_string into a rules dictionary and calculates the next
+    matrix generation from the current matrix and the neighbor matrix.
 
     Parameters:
 
@@ -83,7 +83,7 @@ class Rules:
         self.rules = self._parse(rule_string)
 
     def _parse(self, rule_string):
-        """Converts rulestring in the form "B(somedigits)/S(somedigits)"
+        """Converts rules_tring in the form "B(somedigits)/S(somedigits)"
         to a dictionary such as:
 
         rule_string = "B3/S23" 
@@ -92,7 +92,7 @@ class Rules:
         1 in the dictionary represents that the current element is alive,
         and it requires 2 or 3 neighbors to stay alive. 0 represents
         that the current element is dead and needs 3 neighbors to live.
-        These are called the survival, or s conditions and the birth, or
+        These are called the survival, or s conditions, and the birth, or
         b conditions respectively.
         """
         rules = rule_string.lower()
@@ -119,7 +119,7 @@ class Rules:
 
         To maximize performance I used numpy/scipy methods for intensive 
         calculations. I could not find a method that transforms an array
-        based on a compound bool expression similar to the below example.
+        with a compound bool expression similar to the below example.
 
         new_arr = np.zeros(1, length)
         for i in range(len(new_arr)):
@@ -129,10 +129,10 @@ class Rules:
 
         However, using np.in1d you can create a boolean mask of the
         neighbor_matrix with both the survival list conditions, and the
-        birth list conditions.  I hypothesized if you perform some 
+        birth list conditions.  I hypothesized that if you perform some 
         logic operation between the matrix, the survive_mask, and
         birth_mask, it will produce the desired output. Many 
-        configurations I thought would work failed. But by brute force
+        configurations I thought would work failed. But by brute force,
         I determined the only correct configuration. There is probably a 
         more elegant solution, but this works, and it is fast.
 
@@ -151,8 +151,8 @@ class Rules:
 
 
 class Matrix:
-    """Stores current matrix. Detects if matrix is malformed. Returns matrix
-    with view_matrix method. Updates matrix with set_matrix method. Returns a
+    """Store current matrix. Detect if matrix is malformed. Return matrix
+    with view_matrix method. Update matrix with set_matrix method. Return a
     neighbor matrix with the find_neighbors method.
     """
 
@@ -194,7 +194,7 @@ class Matrix:
         self.matrix = new_matrix
 
     def view_matrix(self):
-        """Return current matrix"""
+        """Return current matrix."""
         return self.matrix
 
     def find_neighbors(self):
