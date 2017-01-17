@@ -5,12 +5,14 @@ By Jacob Paulette
 """
 
 import rle
+import gui
 
 import numpy as np
 from scipy import ndimage
 
+import re
+import argparse
 import time
-from tkinter import *
 import sys
 
 # NOTE: input rle pattern file as command line argument. 
@@ -18,10 +20,10 @@ import sys
 # will default to rle.string if left blank.
 #####SETTINGS#####
 wait = 50 # wait time between generation in milliseconds. must be > 0
-pixel_size = 5 # effects size of output screen. must be > 0
-frame = 20 # Frame of dead cells around rle_pattern. should be > 5
+pixel_size = 5 # effects size of output screen. Adjust to taste.
+frame = 10 # Frame of dead cells around rle_pattern. should be > 5
 wrapping = False # Set True for Matrix to wrap around itself
-generations = 200 # Number of generations before program dies.
+generations = -1 # Number of generations before program dies.
 ################## 
 
 
@@ -70,8 +72,8 @@ class Life:
 
 
 class Rules:
-    """Parses rule_string into a rules dictionary and calculates the next
-    matrix generation from the current matrix and the neighbor matrix.
+    """Parses rule_string into and calculates the next
+    generation of matrix from the current matrix and the neighbor matrix.
 
     Parameters:
 
@@ -83,7 +85,7 @@ class Rules:
         self.rules = self._parse(rule_string)
 
     def _parse(self, rule_string):
-        """Converts rules_tring in the form "B(somedigits)/S(somedigits)"
+        """Converts rulestring in the form "B(somedigits)/S(somedigits)"
         to a dictionary such as:
 
         rule_string = "B3/S23" 
@@ -92,7 +94,7 @@ class Rules:
         1 in the dictionary represents that the current element is alive,
         and it requires 2 or 3 neighbors to stay alive. 0 represents
         that the current element is dead and needs 3 neighbors to live.
-        These are called the survival, or s conditions, and the birth, or
+        These are called the survival, or s conditions and the birth, or
         b conditions respectively.
         """
         rules = rule_string.lower()
@@ -119,7 +121,7 @@ class Rules:
 
         To maximize performance I used numpy/scipy methods for intensive 
         calculations. I could not find a method that transforms an array
-        with a compound bool expression similar to the below example.
+        based on a compound bool expression similar to the below example.
 
         new_arr = np.zeros(1, length)
         for i in range(len(new_arr)):
@@ -129,10 +131,10 @@ class Rules:
 
         However, using np.in1d you can create a boolean mask of the
         neighbor_matrix with both the survival list conditions, and the
-        birth list conditions.  I hypothesized that if you perform some 
+        birth list conditions.  I hypothesized if you perform some 
         logic operation between the matrix, the survive_mask, and
         birth_mask, it will produce the desired output. Many 
-        configurations I thought would work failed. But by brute force,
+        configurations I thought would work failed. But by brute force
         I determined the only correct configuration. There is probably a 
         more elegant solution, but this works, and it is fast.
 
@@ -151,9 +153,9 @@ class Rules:
 
 
 class Matrix:
-    """Store current matrix. Detect if matrix is malformed. Return matrix
-    with view_matrix method. Update matrix with set_matrix method. Return a
-    neighbor matrix with the find_neighbors method.
+    """Stores current matrix. Detects if matrix is malformed. Returns matrix
+    with view_matrix method. Updates matrix with set_matrix method. Returns 
+    a neighbor matrix with the find_neighbors method.
     """
 
     FILTER = np.array([
@@ -194,7 +196,7 @@ class Matrix:
         self.matrix = new_matrix
 
     def view_matrix(self):
-        """Return current matrix."""
+        """Return current matrix"""
         return self.matrix
 
     def find_neighbors(self):
@@ -207,128 +209,95 @@ class Matrix:
         return ndimage.convolve(self.matrix, Matrix.FILTER, mode=self.mode)
 
          
-
-class GUI:
-
-    """Using Tkinter's Canvas widgit, update and draw each generation
-    of life matrix. 
-
-    Parameters:
-
-    wait :  time in milliseconds between each matrix gen (min = 1)
-    pixel_size : size of each individual cell (min = 1)
-    x, y : x and y coordinates in matrix  (matrix[y][x])
-    life : an object of the Life class
-
-    Usage:
-
-    gui = GUI(life, x, y, 4, 50)
-    gui.start(100) # amount of generations to run for, see start
-    """
-
-    def __init__(self, life, x, y, pixel_size, wait):
-        self.wait = wait
-        self.root = Tk()
-        self.root.wm_title("PyLife")
-        self.x = x
-        self.y = y
-        self.life = life
-        self.pix = pixel_size
-        self.prev = None # stores n-1 matrix for nth generation
-        self.shape_dict = dict() # stores rectangle objects
-        self.can = Canvas(self.root, width = x*self.pix, heigh = y*self.pix)
-        self.can.pack()
-
-    def _create_rectangle(self, x, y):
-        """Draw a rectangle object on Canvas and return it."""
-        return self.can.create_rectangle(x,y, x+self.pix, y+self.pix, fill = "black")
-
-    def _updateScreen(self, gen):
-        """Update matrix and draw it onto Canvas.
-
-        Parameter:
-
-        gen : Number of generations remaining before termination,
-            decrements by 1 
-
-        For the first generation, loop over all elements in matrix, draw
-        them for elements == 1, and store them in shape_dict.  For each
-        subsequent generation, find the coordinates where the matrix
-        changed by xoring current and previous matrix and using Numpy's
-        nonzero method.  Delete rectangles where self.prev[m][n] == 1,
-        and create new rectangles where self.prev[m][n] == 0.
-        """
-
-        if gen == 0: # If gen == 0 destroy Tkinter window and return.
-            self.root.destroy() 
-            return
-
-        matrix = self.life.view_matrix() # get current matrix
-        if (self.life.get_generation() == 0): # procedure if first gen
-            for m in range(self.y):
-                for n in range(self.x): 
-                    if matrix[m][n] == 1:
-                       x = n * self.pix # transforms matrix coord to..
-                       y = m * self.pix # equivalent canvas coords
-                       self.shape_dict[(m,n)] = self._create_rectangle(x,y)
-        else:
-            change = self.prev ^ matrix # xor n and n-1 matrices
-            coords = np.nonzero(change) # indexes nonzero elements..
-            for i in range(len(coords[0])): # as list((y1,),(x1,))
-                m = coords[0][i]
-                n = coords[1][i]
-                if self.prev[m][n] == 1:
-                    self.can.delete(self.shape_dict[(m,n)])
-                else:
-                    x = n * self.pix
-                    y = m * self.pix
-                    self.shape_dict[(m,n)] = self._create_rectangle(x,y)
-        
-        self.prev = matrix # store matrix for next iteration
-        self.life.update_matrix() # update matrix to next generation
-        self.can.after(self.wait, self._updateScreen, gen-1) # see start
-    
-    def start(self, gen = -1):
-        """Begin Tkinter mainloop.
-
-        Paremeter:
-
-        gen : number of iterations before the mainloop ends.
-        default is -1 meaning it will loop indefinately
-        """
-
-        self.can.after(self.wait, self._updateScreen, gen) # Allows the..
-                                        #Canvas to update inside mainloop.
-        mainloop()
-
-
 ############################################
 
-if __name__ == '__main__':
+def random_life(n, wrapping):
+    """Return a Life object with random nxn matrix"""
+    mat = np.random.randint(2, size=(n,n))
+    return Life(mat, "b3/s23", wrapping)
 
-    file_data = None
-    if len(sys.argv) > 1:
+
+def no_gui(life, gen = 100):
+    """Cycle through game (gen) times, for benchmarking."""
+    for i in range(gen):
+        life.view_matrix()
+        life.update_matrix()
+    
+
+def assign_args():
+    """Create optional command line arguments."""
+    h = [
+    "Generations of life.",
+    "Time in ms between frames.",
+    "Cell size, recomended (2-5).",
+    "Call flag to let matrix wrap around itself.",
+    "Frames of dead cells around pattern, recommend at least 5.",
+    "File/directory of for rle pattern file.",
+    "Make random life matrix of (n,n) dimensions.",
+    "Turns off GUI, for benchmarking Life class."]
+    
+    global generations, wait, pixel_size, wrapping, frame
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-g" ,"--gen", type=int, help=h[0])
+    parser.add_argument("-w", "--wait", type=int, help= h[1])
+    parser.add_argument("-p", "--pix", type=int, help=h[2])
+    parser.add_argument("-wr", "--wrap", action="store_true", help=h[3])
+    parser.add_argument("-fr", "--frame", type=int, help=h[4])
+    parser.add_argument("-f", "--file", type=str, help=h[5])
+    parser.add_argument("-r", "--rand", type=int, help=h[6])
+    parser.add_argument("--nogui", action="store_true", help=h[7])
+    args = parser.parse_args()
+    if type(args.gen) is int:
+        generations = args.gen
+    if type(args.wait) is int:
+        wait = args.wait
+    if type(args.pix) is int:
+        pixel_size = args.pix
+    if type(args.wrap) is bool:
+        wrapping = args.wrap
+    if type(args.frame) is int:
+        frame = args.frame
+
+    return args
+        
+
+def main():
+    """Main runtime function."""
+    file_data = None 
+    args = assign_args()
+
+    if type(args.file) is str: # Fetches rle file if specified.
         try:
-            with open(sys.argv[1], 'r') as f:
+            with open(args.file, 'r') as f:
                 file_data = f.read()
         except:
             print("ERROR: File Does Not Exist")
             sys.exit(0)
-    if file_data == None:
+
+    if file_data == None: # If file not specified, parses rle.string
         data = rle.parse_rle(rle.string, frame, frame)
-    else:
+    else: # Parses file specified for rle pattern data.
         try:
             data = rle.parse_rle(file_data, frame, frame)
         except:
             print("ERROR: Corrupt File Data")
             sys.exit(0)
 
-    x, y = data['dimensions']['x'] , data['dimensions']['y']
-    life = Life(data['matrix'], data['rulestring'], wrapping)
+    
+    if type(args.rand) is int:
+        life = random_life(args.rand, wrapping)
+    else:
+        life = Life(data['matrix'], data['rulestring'], wrapping)
+
     a = time.time()
-    gui = GUI(life, x, y, pixel_size, wait)
-    gui.start(generations)
+    if args.nogui:
+        no_gui(life, generations)
+    else:
+        gui.main(life, pixel_size=pixel_size, wait=wait, gen=generations)
     b = time.time()
-    print(b-a, "seconds")
+
+    print("runtime: " + str(b-a) + " seconds")
 
 
+if __name__ == '__main__':
+    main()

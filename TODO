@@ -4,9 +4,9 @@ Add benchmarks and helper functions.
 
 Clean up code.
 
-Add argparser to main.py.
+Add argparser to main.py. X
 
-Upgrade GUI.
+Upgrade GUI. X
 
 Make version of Life using coordinates, rather than a finate array
 
