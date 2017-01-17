@@ -6,12 +6,18 @@ by Jacob Paulette
 
 
 Implemented in Python 3.
+Compatible with Python 2.
 Reads rle pattern files.
 
 External Dependencies:
 ---------------------
 
-scipy, numpy, pygame 1.9.2
+scipy
+
+numpy
+
+pygame 1.9.1 for Python 2, pygame 1.9.2 for Python 3
+
 
 Usage:
 ------
