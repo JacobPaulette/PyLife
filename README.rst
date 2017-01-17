@@ -1,5 +1,5 @@
-# PyLife - a Game of Life implementation
-
+PyLife - a Game of Life implementation
+======================================
 
 by Jacob Paulette
 -----------------
