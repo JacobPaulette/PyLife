@@ -1,6 +1,8 @@
 PyLife - a Game of Life implementation
+--------------------------------------
 
 by Jacob Paulette
+-----------------
 
 
 Implemented in Python 3.
@@ -8,6 +10,7 @@ Reads rle pattern files.
 
 
 External Dependencies:
+---------------------
 
 scipy
 numpy
@@ -15,6 +18,7 @@ pygame 1.9.2
 
 
 Usage:
+------
 
 Use optional arguments to adjust program behavior.
 
