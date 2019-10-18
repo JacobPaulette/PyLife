@@ -1,6 +1,6 @@
 import rle
 import triple_gui
-from triple import Life
+from interdependent import Life
 
 import numpy as np
 from scipy import ndimage
@@ -23,7 +23,8 @@ def assign_args():
     "File/directory of for rle pattern file.",
     "Make random life matrix of (n,n) dimensions.",
     "Override default rule 'b3/s23'.",
-    "Turns off GUI, for benchmarking Life class."]
+    "Turns off GUI, for benchmarking Life class.",
+    "Number of interdependent matrices, min 3."]
     
     global generations, wait, pixel_size, wrapping, frame, rule
     parser = argparse.ArgumentParser()
@@ -36,6 +37,7 @@ def assign_args():
     parser.add_argument("-r", "--rand", type=int, help=h[6])
     parser.add_argument("-ru", "--rule", type=str, help=h[7])
     parser.add_argument("--nogui", action="store_true", help=h[8])
+    parser.add_argument("-n", "--num", type=int, help=h[9])
     args = parser.parse_args()
     if type(args.gen) is int:
         generations = args.gen
@@ -53,11 +55,11 @@ def assign_args():
     return args
         
 
-def random_life(n, wrapping):
+def random_life(n, wrapping,num):
     """Return a Life object with random nxn matrix"""
-    mat = [np.random.randint(2, size=(n,n)) for i in range(3)]
+    mat = [np.random.randint(2, size=(n,n)) for i in range(num)]
     
-    return Life(mat[0], mat[1], mat[2], wrapping)
+    return Life(mat, wrapping)
 
 
 def main():
@@ -87,6 +89,11 @@ def main():
     pixel_size = (5 if args.pix is None else args.pix) # wait time between generation in milliseconds. must be > 0
     frame = 10 # Frame of dead cells around rle_pattern. should be > 5
     wrapping = (False if args.wrap is None else True) # wait time between generation in milliseconds. must be > 0
+    num = (3 if args.num is None else args.num)
+    if (num %2 ==0):
+        return
+    elif (num < 3):
+        return
     generations = -1 # Number of generations before program dies.
     rule = None
     #
@@ -94,7 +101,7 @@ def main():
 
 
     if type(args.rand) is int:
-        life = random_life(args.rand, wrapping)
+        life = random_life(args.rand, wrapping, num)
     else:
         return
     """
@@ -105,7 +112,7 @@ def main():
             life = Life(data['matrix'], rule, wrapping)"""
 
     a = time.time()
-    triple_gui.main(life, pixel_size=pixel_size, wait=wait, gen=generations, speed=30)
+    triple_gui.main(life, pixel_size=pixel_size, wait=wait, gen=generations, speed=1)
     b = time.time()
 
     print("runtime: " + str(b-a) + " seconds")

@@ -24,6 +24,7 @@ pixel_size = 5 # effects size of output screen. Adjust to taste.
 frame = 10 # Frame of dead cells around rle_pattern. should be > 5
 wrapping = False # Set True for Matrix to wrap around itself
 generations = -1 # Number of generations before program dies.
+rule = None
 ################## 
 
 
@@ -211,10 +212,10 @@ class Matrix:
          
 ############################################
 
-def random_life(n, wrapping):
+def random_life(n, wrapping, rule="b3/s23"):
     """Return a Life object with random nxn matrix"""
     mat = np.random.randint(2, size=(n,n))
-    return Life(mat, "b3/s23", wrapping)
+    return Life(mat, rule, wrapping)
 
 
 def no_gui(life, gen = 100):
@@ -234,9 +235,10 @@ def assign_args():
     "Frames of dead cells around pattern, recommend at least 5.",
     "File/directory of for rle pattern file.",
     "Make random life matrix of (n,n) dimensions.",
+    "Override default rule 'b3/s23'.",
     "Turns off GUI, for benchmarking Life class."]
     
-    global generations, wait, pixel_size, wrapping, frame
+    global generations, wait, pixel_size, wrapping, frame, rule
     parser = argparse.ArgumentParser()
     parser.add_argument("-g" ,"--gen", type=int, help=h[0])
     parser.add_argument("-w", "--wait", type=int, help= h[1])
@@ -245,7 +247,8 @@ def assign_args():
     parser.add_argument("-fr", "--frame", type=int, help=h[4])
     parser.add_argument("-f", "--file", type=str, help=h[5])
     parser.add_argument("-r", "--rand", type=int, help=h[6])
-    parser.add_argument("--nogui", action="store_true", help=h[7])
+    parser.add_argument("-ru", "--rule", type=str, help=h[7])
+    parser.add_argument("--nogui", action="store_true", help=h[8])
     args = parser.parse_args()
     if type(args.gen) is int:
         generations = args.gen
@@ -257,6 +260,8 @@ def assign_args():
         wrapping = args.wrap
     if type(args.frame) is int:
         frame = args.frame
+    if type(args.rule) is str:
+        rule = args.rule
 
     return args
         
@@ -283,11 +288,18 @@ def main():
             print("ERROR: Corrupt File Data")
             sys.exit(0)
 
-    
     if type(args.rand) is int:
-        life = random_life(args.rand, wrapping)
+        if rule is None:
+            default = "b3/s23"
+        else:
+            default = rule
+        life = random_life(args.rand, wrapping, rule = default)
     else:
-        life = Life(data['matrix'], data['rulestring'], wrapping)
+        if rule is None:
+            life = Life(data['matrix'], data['rulestring'], wrapping)
+        else:
+            life = Life(data['matrix'], rule, wrapping)
+
 
     a = time.time()
     if args.nogui:
