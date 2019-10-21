@@ -112,7 +112,7 @@ def main():
             life = Life(data['matrix'], rule, wrapping)"""
 
     a = time.time()
-    triple_gui.main(life, pixel_size=pixel_size, wait=wait, gen=generations, speed=1)
+    triple_gui.main(life, pixel_size=pixel_size, wait=wait, gen=generations, speed=1, frame=None)
     b = time.time()
 
     print("runtime: " + str(b-a) + " seconds")

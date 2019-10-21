@@ -25,13 +25,13 @@ def transform(array, pixel_size):
     return mirror(color_matrix(scale(array, pixel_size)))
     
 
-def main(life, pixel_size=3, wait = 50, gen = -1, speed=1):
+def main(life, pixel_size=3, wait = 50, gen = -1, speed=1, frame=None):
     """Run life simulation."""
     pygame.init()
     pygame.display.set_caption("PyLife")
     mat = mirror(scale(life.view_matrix(0), pixel_size))# to find dimensions
     screen = pygame.display.set_mode(mat.shape)
-    switch = 30
+    switch = 5
     count_total = 0
     count = 0
     print(0)
@@ -49,12 +49,15 @@ def main(life, pixel_size=3, wait = 50, gen = -1, speed=1):
         for i in range(life.get_size()):
             super_imposed = np.logical_or(super_imposed, life.view_matrix(i))
         """
-        
-        super_imposed = life.view_matrix(count % life.get_size())
-        count_total += 1
-        if (count_total % switch == 0):
-            count += 1
-            print(count % life.get_size())
+
+        if frame is None:
+            super_imposed = life.view_matrix(count % life.get_size())
+            count_total += 1
+            if (count_total % switch == 0):
+                count += 1
+                print(count % life.get_size())
+        else:
+            super_imposed = life.view_matrix(frame)
         mat = transform(super_imposed, pixel_size) 
         pygame.surfarray.blit_array(screen, mat)
         for i in range(speed):

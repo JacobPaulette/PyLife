@@ -144,4 +144,3 @@ class Matrix:
         survival_mask = survival_mask.astype(int)
         self.matrix = (self.matrix & survival_mask) | birth_mask
 
-
