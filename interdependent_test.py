@@ -92,7 +92,7 @@ def main():
     num = (3 if args.num is None else args.num)
     if (num %2 ==0):
         return
-    elif (num < 3):
+    if (num < 3):
         return
     generations = -1 # Number of generations before program dies.
     rule = None

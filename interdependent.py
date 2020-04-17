@@ -2,6 +2,14 @@ import numpy as np
 from scipy import ndimage
 import re
 
+def birth_HalfandHalf(n,N):
+    #from n+1 to n+((N-1)/2)
+    return range((n+1)%N, (n+((N-1)//2))%N)
+
+def survive_HalfandHalf(n,N):
+    return 1
+
+
 class Life:
     """The controller class for PyLife.
     
@@ -27,6 +35,12 @@ class Life:
         self.matrices = [Matrix(i, wrapping) for i in matrices]
         self.generation = 0
         self.size = len(self.matrices)
+        self.rules = self.create_rules()
+        self.CAset = set([i.hash() for i in self.matrices])
+        self.CAdict = dict()
+        self.avg = 1
+        for i in self.CAset:
+            self.CAdict[i] = 1
 
     def view_matrix(self, i):
         """Return matrix as a numpy 2d array."""
@@ -35,6 +49,16 @@ class Life:
     def get_generation(self):
         """Return current generation of the game."""
         return self.generation
+
+    def create_rules(self):
+        rules = list()
+        whole = np.arange(self.size)
+        half = (self.size - 1)//2
+        for i in range(self.size):
+            new_range = np.delete(whole, i)
+            np.random.shuffle(new_range)
+            rules.append((new_range[:half], new_range[half:]))
+        return rules
 
     def get_size(self):
         return self.size
@@ -56,11 +80,46 @@ class Life:
         sz = len(self.matrices)
         slicelen = int((sz-1)/2)
         for i in range(sz):
+            """OG mode, the only really interesting one"""
+            """
             bs = (i+1)%sz
             be = ((i+slicelen)%sz) + 1
             ss = (i+slicelen+1)%sz
             se = ((i+(2*slicelen))%sz) + 1
             self.matrices[i].epoch(n_list[ss:se], n_list[bs:be])
+            """
+            """
+            RANDOM mode - Both Random and Even/Odd get similar behaviors
+            b_list = [n_list[j] for j in self.rules[i][0]]
+            s_list = [n_list[j] for j in self.rules[i][1]]
+            self.matrices[i].epoch(s_list, b_list)
+            """
+            #"""EVEN ODD mode - they are still interesting though
+            b_list = [n_list[j] for j in range(self.size) if ((j!=i) and j%2==0)]
+            s_list = [n_list[j] for j in range(self.size) if ((j!=i) and j%2==1)]
+            self.matrices[i].epoch(s_list, b_list)
+            #"""
+            """Plus 2 mode"""
+            #"""
+            #self.matrices[i].epoch([n_list[(i-1)%sz]], [n_list[(i-2)%sz]])
+            #"""
+            """
+            hashval = self.matrices[i].hash()
+            if hashval in self.CAset:
+                self.CAdict[hashval] = self.CAdict[hashval] + 1
+            else:
+                self.CAset.add(hashval)
+                self.CAdict[hashval] = 1
+            if self.generation % 100 == 0:
+                newpage = "\n"*70
+                print(newpage)
+                sumhash = 0
+                for i in self.CAdict.keys():
+                    if (self.CAdict[i] > self.avg):
+                        print(i, self.CAdict[i])
+                        sumhash += self.CAdict[i]
+                self.avg = sumhash/self.CAdict.size()
+            """
         self.generation += 1
 
 
@@ -103,6 +162,13 @@ class Matrix:
         else:
             print("ERROR: INVALID MATRIX")
             sys.exit(0)
+
+    def hash(self):
+        out = 0
+        for row in self.matrix:
+            for bit in row:
+                out = (out << 1) ^ bit
+        return out
 
     def set_matrix(self, new_matrix):
         """Set new_matrix as self.matrix."""

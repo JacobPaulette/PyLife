@@ -4,6 +4,7 @@ import sys
 
 
 def color_matrix(array):
+    global flip
     """Replace binary values with RGB black and white."""
     size = array.shape + (3,) 
     color = np.full(size, [255,255,255], dtype=np.int)
@@ -45,11 +46,12 @@ def main(life, pixel_size=3, wait = 50, gen = -1, speed=1, frame=None):
         else:
             gen -= 1
         """
+        #for CA = 3
         super_imposed = np.zeros(life.view_matrix(0).shape)
         for i in range(life.get_size()):
-            super_imposed = np.logical_or(super_imposed, life.view_matrix(i))
+            super_imposed = np.logical_xor(super_imposed, life.view_matrix(i))
         """
-
+        #"""
         if frame is None:
             super_imposed = life.view_matrix(count % life.get_size())
             count_total += 1
@@ -58,6 +60,7 @@ def main(life, pixel_size=3, wait = 50, gen = -1, speed=1, frame=None):
                 print(count % life.get_size())
         else:
             super_imposed = life.view_matrix(frame)
+        #"""
         mat = transform(super_imposed, pixel_size) 
         pygame.surfarray.blit_array(screen, mat)
         for i in range(speed):
